@@ -94,19 +94,17 @@ public class ConexionMySQL {
 			// Class.forName("oracle.jdbc.driver.OracleDriver");
 			// String BaseDeDatos = "jdbc:mysql:" + host + ":" + puerto ;
 
-			conexion = DriverManager
-					.getConnection("jdbc:mysql://" + host + "/mydb?" + "user="+usuario+"&password="+password);
-			if (conexion != null)
-				System.out.println("Conexión realizada con éxisto ");
-			else {
+			conexion = DriverManager.getConnection(
+					"jdbc:mysql://" + host + "/mydb?" + "user=" + usuario + "&password=" + password + "&useSSL=false");
+			if (conexion == null) {
 				JOptionPane.showMessageDialog(null, "Error al conectar. Revise Configuracion", "Error",
 						JOptionPane.ERROR_MESSAGE);
 				System.out.println("Conexión fallida");
 			}
 		} catch (SQLException ex) {
 			System.out.println("SQLException: " + ex.getMessage());
-		    System.out.println("SQLState: " + ex.getSQLState());
-		    System.out.println("VendorError: " + ex.getErrorCode());
+			System.out.println("SQLState: " + ex.getSQLState());
+			System.out.println("VendorError: " + ex.getErrorCode());
 		}
 
 		return conexion;
@@ -129,7 +127,7 @@ public class ConexionMySQL {
 			this.puerto = (String) in.readObject();
 			this.usuario = (String) in.readObject();
 			this.password = (String) in.readObject();
-			
+
 		} catch (EOFException e) {
 			System.out.println(e);
 		} catch (ClassNotFoundException e) {

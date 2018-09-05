@@ -28,13 +28,16 @@ import frame.JFResultados;
 
 public class CargarCSV {
 
+	private static final String TABLA_ALUMNOS = "alumnos";
+	private static final String TABLA_PROFESORES = "profesores";
 	File ficheroCSV;
 	File ficheroConf;
 	private String csvFile = "";
 	private String lineCSV = "";
 	private String filaBatch = "";
-	
-	private int id;
+
+	private int NIA;
+	private String DNI;
 
 	private String username;
 	private String passwd;
@@ -45,6 +48,9 @@ public class CargarCSV {
 	private String apellido2;
 	private String curso;
 	private String grupo;
+	private int registroActualizados=0;
+	
+	private String id;
 
 	private String homedir;
 	private String shell = "/bin/bash";
@@ -55,7 +61,6 @@ public class CargarCSV {
 
 	public CargarCSV(File fconf, String tipoUsuario) throws IOException {
 
-		
 		this.ficheroConf = fconf;
 
 		cargarConfiguracion(tipoUsuario);
@@ -86,14 +91,14 @@ public class CargarCSV {
 
 			this.cvsSplitBy = (String) in.readObject();
 			this.shell = (String) in.readObject();
-			if (tipoUsuario.compareTo("alumnos") == 0) {
+			if (tipoUsuario.compareTo(TABLA_ALUMNOS) == 0) {
 
 				in.readObject();
 				in.readObject();
 				this.uid = Integer.parseInt((String) in.readObject());
 				this.gid = Integer.parseInt((String) in.readObject());
 
-			} else if (tipoUsuario.compareTo("profesores") == 0) {
+			} else if (tipoUsuario.compareTo(TABLA_PROFESORES) == 0) {
 				this.uid = Integer.parseInt((String) in.readObject());
 				this.gid = Integer.parseInt((String) in.readObject());
 				in.readObject();
@@ -129,7 +134,7 @@ public class CargarCSV {
 		try {
 
 			con = new ConexionMySQL(fconf).Conectar();
-			
+
 			int maxUidBBDD = actualizarUID(con, tabla);
 
 			this.uid = (maxUidBBDD > this.uid) ? maxUidBBDD : this.uid;
@@ -142,54 +147,94 @@ public class CargarCSV {
 				lineCSV.split(cvsSplitBy);
 				
 				java.util.Date fecha;
-				
+
 				String primeraLetraSegundoApellido;
 
 				while ((lineCSV = br.readLine()) != null) {
-					
+
 					// usamos cvsSplitBy como separador
 					datos = lineCSV.split(cvsSplitBy);
+					
+					// Eliminamos las primeras filas del archivos profesores si es el caso
+					if(tabla.compareTo(TABLA_PROFESORES)==0){
+						while((datos[0].replaceAll("\"", "")).compareTo("Docente")!=0 && lineCSV!=null){
+							lineCSV = br.readLine();
+							datos = lineCSV.split(cvsSplitBy);
+						}
+					}
+					
+
+					if (tabla.compareTo(TABLA_ALUMNOS) == 0)
+						NIA = Integer.parseInt(datos[0].replaceAll("\"", ""));
+					if (tabla.compareTo(TABLA_PROFESORES) == 0)
+						DNI = datos[1].replaceAll("\"", "");
+					
+					id = (tabla.compareTo(TABLA_ALUMNOS) == 0)? String.valueOf(NIA):DNI;
 
 					// Comporbamos si ya esta dado de alta el usuario en la BBDD
-					if (!existeUsuario(con, tabla, datos[0])) {
+					if (!existeUsuario(con, tabla, id)) {
+
+						primeraLetraSegundoApellido = (datos[3].compareTo("") == 0) ? ""
+								: String.valueOf(datos[3].replaceAll("\"", "").charAt(0));
 						
-						primeraLetraSegundoApellido = (datos[3].compareTo("")==0)?"":String.valueOf(datos[3].replaceAll("\"", "").charAt(0));
-						username = limpiarCaracteres(
-								(datos[1].replaceAll("\"", "").charAt(0) + datos[2].replaceAll("\"", "") + primeraLetraSegundoApellido ).toLowerCase().replace(" ", ""));
 						
-						// Comprobamos que no haya otro username igual
-						
-						if(existeLogin(con,tabla,username)){
-							j=1;
-		
-							while(existeLogin(con,tabla,username + j)){
-								j++;
-							}
-							username=username+j;							
+						switch(tabla){
+						case TABLA_ALUMNOS:
+							username = limpiarCaracteres(
+									(datos[1].replaceAll("\"", "").charAt(0) + datos[2].replaceAll("\"", "")
+											+ primeraLetraSegundoApellido).toLowerCase().replace(" ", "")).toLowerCase();
+							break;
+						case TABLA_PROFESORES:
+							username = limpiarCaracteres((datos[2].replaceAll("\"", "").charAt(0) + datos[3].replaceAll("\"", ""))).toLowerCase();
+							break;
 						}
 						
-						passwd = datos[0].replaceAll("\"", "");
+
+						// Comprobamos que no haya otro username igual
+
+						if (existeLogin(con, tabla, username)) {
+							j = 1;
+
+							while (existeLogin(con, tabla, username + j)) {
+								j++;
+							}
+							username = username + j;
+						}
 						
-						nombre = datos[1].replaceAll("\"", "");
-						apellido1 = datos[2].replaceAll("\"", "");
-						apellido2 = datos[3].replaceAll("\"", "");
-						curso = datos[11].replaceAll("\"", "");
-						grupo = datos[12].replaceAll("\"", "");
-						id = Integer.parseInt(datos[0].replaceAll("\"", ""));						
-						homedir = "/home/" + username;
+						switch (tabla) {
+						case TABLA_ALUMNOS:
+							passwd = datos[0].replaceAll("\"", "");
+							nombre = datos[1].replaceAll("\"", "");
+							apellido1 = datos[2].replaceAll("\"", "");
+							apellido2 = datos[3].replaceAll("\"", "");
+							curso = datos[11].replaceAll("\"", "");
+							grupo = datos[12].replaceAll("\"", "");
+							expira = obternerFechaExpiracion(Integer.parseInt(expiraAlumnos));							
+							break;
+						case TABLA_PROFESORES:							
+							nombre = datos[2].replaceAll("\"", "");
+							apellido1 = datos[3].replaceAll("\"", "");
+							apellido2 = datos[4].replaceAll("\"", "");
+							expira = obternerFechaExpiracion(Integer.parseInt(expiraProfesor));
+							
+							break;
+						}
 						
-						fecha = new java.util.Date();						
-						expira = new java.sql.Date(fecha.getTime());						
-						expira = sumarAnyos(expira,2);
 						
 						insertar(con, tabla);
-						resultado = resultado + " Insertado el usuario " + nombre + " " + apellido1 + " " + apellido2 + " con login " + username + "\n";  
+						resultado = resultado + " Insertado el usuario " + nombre + " " + apellido1 + " " + apellido2
+								+ " con login " + username + "\n";
 						i++;
 						uid++;
+					} else {
+						if (tabla.compareTo(TABLA_ALUMNOS)==0)actualizarExpiracion(con, tabla, NIA);
+						if (tabla.compareTo(TABLA_PROFESORES)==0)actualizarExpiracion(con, tabla, DNI);
 					}
 
 				}
-				resultado = resultado + "Se han insertado " + i + " usuarios nuevos";
+				resultado = resultado + "Se han insertado " + i + " usuarios nuevos \n" +
+										"Se han actualizado " + registroActualizados +" registros.";
+				
 				jfr.añadirTexto(resultado);
 
 			} catch (IOException e) {
@@ -203,44 +248,85 @@ public class CargarCSV {
 
 	}
 
+	public void actualizarExpiracion(Connection c, String table, int id) throws SQLException {
+
+		String query = "";
+
+		query = "update alumnos set expira = ? where NIA = ?";
+
+		PreparedStatement preparedStmt = c.prepareStatement(query);
+
+		preparedStmt.setDate(1, expira);
+		preparedStmt.setInt(2, id);
+
+		preparedStmt.execute();
+		registroActualizados++;
+
+	}
+
+	public void actualizarExpiracion(Connection c, String table, String id) throws SQLException {
+
+		String query = "";
+
+		query = "update profesores set expira = ? where DNI = ?";
+
+		PreparedStatement preparedStmt = c.prepareStatement(query);
+
+		java.sql.Date ex = obternerFechaExpiracion(Integer.parseInt(expiraProfesor));
+
+		preparedStmt.setDate(1, ex);
+		preparedStmt.setString(2, id);
+
+		preparedStmt.execute();
+		registroActualizados++;
+
+	}
+
 	public String generarPassword(String dni) {
 		String pass = dni.substring(dni.length() - 5, dni.length() - 1);
 		pass = pass + dni.charAt(dni.length() - 1) + dni.charAt(dni.length() - 1);
 		pass = pass + (int) (Math.random() * 1000) + 1;
 		return pass;
 	}
-	
-	public java.sql.Date sumarAnyos(java.sql.Date fecha, int anyos){			
-		      Calendar calendar = Calendar.getInstance();			
-		      calendar.setTime(fecha); 		
-		      calendar.add(Calendar.YEAR, anyos);  	
-		      return new java.sql.Date(calendar.getTimeInMillis()); 	
-		 }
+
+	public java.sql.Date sumarAnyos(java.sql.Date fecha, int anyos) {
+		Calendar calendar = Calendar.getInstance();
+		calendar.setTime(fecha);
+		calendar.add(Calendar.YEAR, anyos);
+		return new java.sql.Date(calendar.getTimeInMillis());
+	}
+
+	public java.sql.Date obternerFechaExpiracion(int anyos) {
+		java.util.Date f = new java.util.Date();
+		java.sql.Date ex = new java.sql.Date(f.getTime());
+		ex = sumarAnyos(ex, anyos);
+		return ex;
+	}
 
 	public void insertar(Connection c, String table) throws SQLException {
 
 		String query = "";
 
 		switch (table) {
-		case "alumnos":
+		case TABLA_ALUMNOS:
 			query = "insert into alumnos (NIA, nombre, apellido1, apellido2, email,username,expira,curso,grupo,ldap,gam,uid,password)"
 					+ " values (?, ?, ?, ?, ?,?, ?, ?, ?, ?, ?, ?,?)";
 			break;
-		case "profesores":
+		case TABLA_PROFESORES:
 			query = "insert into profesores (DNI, nombre, apellido1, apellido2, email,username,expira,especialidad,ldap,gam,uid)"
 					+ " values (?, ?, ?, ?, ?,?, ?, ?, ?, ?, ?)";
 			break;
 		}
 
 		PreparedStatement preparedStmt = c.prepareStatement(query);
-		
+
 		switch (table) {
-		case "alumnos":
-			preparedStmt.setInt(1, id);
+		case TABLA_ALUMNOS:
+			preparedStmt.setInt(1, NIA);
 			preparedStmt.setString(2, nombre);
 			preparedStmt.setString(3, apellido1);
 			preparedStmt.setString(4, apellido2);
-			preparedStmt.setString(5, username+"@ieslavereda.es");
+			preparedStmt.setString(5, username + "@ieslavereda.es");
 			preparedStmt.setString(6, username);
 			preparedStmt.setDate(7, expira);
 			preparedStmt.setString(8, curso);
@@ -248,50 +334,46 @@ public class CargarCSV {
 			preparedStmt.setString(10, "NO");
 			preparedStmt.setString(11, "NO");
 			preparedStmt.setInt(12, uid);
-			preparedStmt.setInt(13, id);
+			preparedStmt.setInt(13, NIA);
 			break;
-		case "profesores":
-			preparedStmt.setInt(1, id);
+		case TABLA_PROFESORES:
+			preparedStmt.setString(1, DNI);
 			preparedStmt.setString(2, nombre);
 			preparedStmt.setString(3, apellido1);
 			preparedStmt.setString(4, apellido2);
-			preparedStmt.setString(5, username+"@ieslavereda.es");
+			preparedStmt.setString(5, username + "@ieslavereda.es");
 			preparedStmt.setString(6, username);
-			preparedStmt.setString(7, expiraAlumnos);
-			preparedStmt.setString(8, curso);
-			preparedStmt.setString(9, grupo);
+			preparedStmt.setDate(7, expira);
+			preparedStmt.setString(8, "");
+			preparedStmt.setString(9, "NO");
 			preparedStmt.setString(10, "NO");
-			preparedStmt.setString(11, "NO");
-			preparedStmt.setInt(12, uid);
+			preparedStmt.setInt(11, uid);
 			break;
 		}
 
-		
-
-		
 		preparedStmt.execute();
 
 	}
-	
-	public boolean existeLogin(Connection c,String tabla,String username) throws SQLException{
-		
+
+	public boolean existeLogin(Connection c, String tabla, String username) throws SQLException {
+
 		PreparedStatement ps = null;
 		String query = "";
 		ResultSet rs = null;
 		int rowCount;
 
 		query = "select count(*) from " + tabla + " where username= ?";
-		
+
 		try {
 			ps = c.prepareStatement(query);
-			
+
 			ps.setString(1, username);
-			
+
 			rs = ps.executeQuery();
 
 			rs.next();
 			rowCount = rs.getInt(1);
-			
+
 		} finally {
 			if (rs != null)
 				rs.close();
@@ -299,7 +381,7 @@ public class CargarCSV {
 				ps.close();
 		}
 		return (rowCount == 1) ? true : false;
-		
+
 	}
 
 	public String limpiarCaracteres(String s) {
@@ -318,11 +400,11 @@ public class CargarCSV {
 		int rowCount;
 
 		switch (table) {
-		case "alumnos":
+		case TABLA_ALUMNOS:
 			query = "select count(*) " + "from " + table + " where NIA=" + id;
 			break;
-		case "profesores":
-			query = "select count(*) " + "from " + table + " where DNI=" + id;
+		case TABLA_PROFESORES:
+			query = "select count(*) " + "from " + table + " where DNI=\"" + id + "\"";
 			break;
 		}
 
@@ -341,6 +423,10 @@ public class CargarCSV {
 		}
 		return (rowCount != 0) ? true : false;
 	}
+	
+	
+	
+	
 
 	public int actualizarUID(Connection con, String table) throws SQLException {
 

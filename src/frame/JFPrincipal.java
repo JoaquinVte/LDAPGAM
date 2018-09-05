@@ -14,6 +14,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.sql.SQLException;
 
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -29,11 +30,14 @@ import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.awt.event.ActionEvent;
 
-import tools.*;
+import tools.MySQLtoLDAPAlumnos;
+
 import tools.CargarCSV;
 
 public class JFPrincipal extends JFrame {
 
+	private static final String TABLA_ALUMNOS = "alumnos";
+	private static final String TABLA_PROFESORES = "profesores";
 	private JPanel contentPane;
 	private JFrame frame;
 	
@@ -81,55 +85,42 @@ public class JFPrincipal extends JFrame {
 		setContentPane(contentPane);
 
 		JButton btnGenerarGamAlumnos = new JButton("Generar GAM Alumnos");
+		btnGenerarGamAlumnos.setEnabled(false);
 		btnGenerarGamAlumnos.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				JFileChooser fch = new JFileChooser();
-
-				fch.setFileFilter(filter);
-
-				int opcion = fch.showOpenDialog(null);
-
-				// Si hacemos click
-				if (opcion == JFileChooser.APPROVE_OPTION) {
-					try {
-						// Obtenenemos el nombre del fichero seleccionado
-						
-						CSVtoLDAPAlumnos ctl = new CSVtoLDAPAlumnos(fch.getSelectedFile(),ficheroConfiguracion,"alumno");
-
-					} catch (Exception e1) {
-						e1.printStackTrace();
-					}
-				}
+				
 			}
 		});
 
 		JButton btnGenerarGamProfesores = new JButton("Generar GAM Profesores");
+		btnGenerarGamProfesores.setEnabled(false);
 		btnGenerarGamProfesores.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 			}
 		});
 
 		JButton btnGenerarLDAPSambaAlumnos = new JButton("Generar LDAP/SAMBA Alumnos");
+		btnGenerarLDAPSambaAlumnos.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				
+				try {
+					MySQLtoLDAPAlumnos msla = new MySQLtoLDAPAlumnos(ficheroConfiguracion,TABLA_ALUMNOS);
+				} catch (SQLException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				
+			}
+		});
 
 		JButton btnGenerarLDAPSambaProfesores = new JButton("Generar LDAP/SAMBA Profesores");
 		btnGenerarLDAPSambaProfesores.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				JFileChooser fch = new JFileChooser();
-
-				fch.setFileFilter(filter);
-
-				int opcion = fch.showOpenDialog(null);
-
-				// Si hacemos click
-				if (opcion == JFileChooser.APPROVE_OPTION) {
-					try {
-						// Obtenenemos el nombre del fichero seleccionado
-						
-						CSVtoLDAPProfesores ctl = new CSVtoLDAPProfesores(fch.getSelectedFile(),ficheroConfiguracion,"profesor");
-
-					} catch (Exception e1) {
-						e1.printStackTrace();
-					}
+				try {
+					MySQLtoLDAPAlumnos msla = new MySQLtoLDAPAlumnos(ficheroConfiguracion,TABLA_PROFESORES);
+				} catch (SQLException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
 				}
 			}
 		});
@@ -147,7 +138,7 @@ public class JFPrincipal extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				
 					try{	
-						CargarCSV cCSV = new CargarCSV(ficheroConfiguracion,"alumnos");
+						CargarCSV cCSV = new CargarCSV(ficheroConfiguracion,TABLA_ALUMNOS);
 					}catch (Exception ex){
 						ex.printStackTrace();
 					}
@@ -157,6 +148,15 @@ public class JFPrincipal extends JFrame {
 		});
 		
 		JButton btnCargarcsvPorfesores = new JButton("Cargar .csv  Porfesores en BBDD");
+		btnCargarcsvPorfesores.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				try{	
+					CargarCSV cCSV = new CargarCSV(ficheroConfiguracion,TABLA_PROFESORES);
+				}catch (Exception ex){
+					ex.printStackTrace();
+				}
+			}
+		});
 		GroupLayout gl_contentPane = new GroupLayout(contentPane);
 		gl_contentPane.setHorizontalGroup(
 			gl_contentPane.createParallelGroup(Alignment.LEADING)
