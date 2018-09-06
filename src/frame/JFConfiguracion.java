@@ -302,6 +302,7 @@ public class JFConfiguracion extends JFrame {
 			tFHost.setText(host);
 			tFUsuario.setText(usuario);
 			tFPassword.setText(password);
+			tFPuerto.setText(puerto);
 			
 		} catch (Exception e) {
 			e.printStackTrace();
