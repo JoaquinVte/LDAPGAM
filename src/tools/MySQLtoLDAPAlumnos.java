@@ -52,58 +52,62 @@ public class MySQLtoLDAPAlumnos {
 			e.printStackTrace();
 		}
 
-		ResultSet rs=null;
+		ResultSet rs = null;
 
 		JFResultados jfr = new JFResultados();
 		jfr.setVisible(true);
-		try{
-		rs = (tabla.compareTo(TABLA_ALUMNOS) == 0) ? obtenerUsuariosNOLDAP(con, TABLA_ALUMNOS)
-				: obtenerUsuariosNOLDAP(con, TABLA_PROFESORES);
+		try {
+			rs = (tabla.compareTo(TABLA_ALUMNOS) == 0) ? obtenerUsuariosNOLDAP(con, TABLA_ALUMNOS)
+					: obtenerUsuariosNOLDAP(con, TABLA_PROFESORES);
 
-		if (rs == null) {
-			JOptionPane.showMessageDialog(null, "Todos los usuarios constan como dados de alta en LDAP.", "Informacion",
-					JOptionPane.INFORMATION_MESSAGE);
-		} else {
-			while (rs.next()) {
-				username = rs.getString("username");
-				uid = rs.getInt("uid");
-				homedir = "/home/" + username;
-				realname = rs.getString("nombre") + " " + rs.getString("apellido1") + " " + rs.getString("apellido2");
-				passwd = rs.getString("password");
+			if (rs == null) {
+				JOptionPane.showMessageDialog(null, "Todos los usuarios constan como dados de alta en LDAP.",
+						"Informacion", JOptionPane.INFORMATION_MESSAGE);
+			} else {
+				while (rs.next()) {
+					username = rs.getString("username");
+					uid = rs.getInt("uid");
+					homedir = "/home/" + username;
+					realname = rs.getString("nombre") + " " + rs.getString("apellido1") + " "
+							+ rs.getString("apellido2");
+					passwd = (tabla.compareTo(TABLA_ALUMNOS)==0)?rs.getString("password"):rs.getString("dni");
 
-				gid = (tabla.compareTo(TABLA_ALUMNOS) == 0) ? gidAlumnos : gidProfesor;
+					gid = (tabla.compareTo(TABLA_ALUMNOS) == 0) ? gidAlumnos : gidProfesor;
 
-				resultado = resultado + "create:" + username + ":" + passwd + ":" + uid + ":" + gid + ":" + realname
-						+ ":" + homedir + ":" + shell + ":" + min + ":" + max + ":" + warn + ":" + inactive + ":"
-						+ expire + "\n";
+					resultado = resultado + "create:" + username + ":" + passwd + ":" + uid + ":" + gid + ":" + realname
+							+ ":" + homedir + ":" + shell + ":" + min + ":" + max + ":" + warn + ":" + inactive + ":"
+							+ expire + "\n";
 
-				jfr.añadirTexto("create:" + username + ":" + passwd + ":" + uid + ":" + gid + ":" + realname + ":"
-						+ homedir + ":" + shell + ":" + min + ":" + max + ":" + warn + ":" + inactive + ":" + expire);
-				i++;
+					jfr.añadirTexto(
+							"create:" + username + ":" + passwd + ":" + uid + ":" + gid + ":" + realname + ":" + homedir
+									+ ":" + shell + ":" + min + ":" + max + ":" + warn + ":" + inactive + ":" + expire);
+					i++;
+				}
 			}
-		}
-		jfr.añadirTexto("\nSe han creado " + i + " entradas nuevas.");
-		jfr.añadirTexto(
-				"Recuerde añadir el resultado a Webmin para la creacion de las cuentas LDAP, y actualice la BBDD");
+			jfr.añadirTexto("\nSe han creado " + i + " entradas nuevas.");
+			jfr.añadirTexto(
+					"Recuerde añadir el resultado a Webmin para la creacion de las cuentas LDAP, y actualice la BBDD");
 
-		JOptionPane.showMessageDialog(null,
-				"Proceso finalizado.\nRecuerde añadir el resultado a Webmin para la creacion de las cuentas LDAP, \ny actualice la BBDD.",
-				"Informacion", JOptionPane.INFORMATION_MESSAGE);
-		}catch(Exception e){
+			JOptionPane.showMessageDialog(null,
+					"Proceso finalizado.\nRecuerde añadir el resultado a Webmin para la creacion de las cuentas LDAP, \ny actualice la BBDD.",
+					"Informacion", JOptionPane.INFORMATION_MESSAGE);
+		} catch (Exception e) {
 			e.printStackTrace();
-		}finally{
-			if(rs!=null)rs.close();
-			if(con!=null)con.close();
+		} finally {
+			if (rs != null)
+				rs.close();
+			if (con != null)
+				con.close();
 		}
 
 	}
 
 	public ResultSet obtenerUsuariosNOLDAP(Connection c, String table) {
 
-		String query = "SELECT * FROM alumnos WHERE ldap=\"NO\"";
+		String query = "SELECT * FROM " + table + " WHERE ldap=\"NO\"";
 		Statement st;
 		ResultSet r = null;
-
+		System.out.println(query);
 		try {
 			st = c.createStatement();
 			r = st.executeQuery(query);
