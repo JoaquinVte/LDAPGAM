@@ -185,7 +185,7 @@ public class CargarCSV {
 											+ primeraLetraSegundoApellido).toLowerCase().replace(" ", "")).toLowerCase();
 							break;
 						case TABLA_PROFESORES:
-							username = limpiarCaracteres((datos[2].replaceAll("\"", "").charAt(0) + datos[3].replaceAll("\"", ""))).toLowerCase();
+							username = (limpiarCaracteres((datos[2].replaceAll("\"", "").charAt(0) + datos[3].replaceAll("\"", ""))).toLowerCase()).replace(" ", "");
 							break;
 						}
 						
@@ -385,7 +385,7 @@ public class CargarCSV {
 	}
 
 	public String limpiarCaracteres(String s) {
-		String texto = s;
+		String texto = s.replace("ñ", "ny");
 		texto = Normalizer.normalize(texto, Normalizer.Form.NFD);
 		texto = texto.replaceAll("[\\p{InCombiningDiacriticalMarks}]", "");
 		texto = texto.replaceAll("ñ", "ny");
