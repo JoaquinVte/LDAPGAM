@@ -94,7 +94,7 @@ public class GenerarGAM {
 					añadirUsuarioGAM("pruebas");
 					usuariosGenerados++;
 				}
-				System.out.println("Usuario: " + (usuariosGenerados+usuariosMovidos) + "  Movidos: " + usuariosMovidos + "  Generados: "+usuariosGenerados);
+				System.out.println("Usuario: " + (usuariosGenerados+usuariosMovidos) + "   -  Movidos: " + usuariosMovidos + "   -  Generados: "+usuariosGenerados);
 			}
 			
 			jpr.añadirTexto("Se han creado " + usuariosGenerados + "\n" );
