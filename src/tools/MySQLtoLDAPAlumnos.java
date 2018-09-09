@@ -89,8 +89,11 @@ public class MySQLtoLDAPAlumnos {
 					"Recuerde añadir el resultado a Webmin para la creacion de las cuentas LDAP, y actualice la BBDD");
 
 			JOptionPane.showMessageDialog(null,
-					"Proceso finalizado.\nRecuerde añadir el resultado a Webmin para la creacion de las cuentas LDAP, \ny actualice la BBDD.",
+					"Proceso finalizado.\nRecuerde añadir el resultado a Webmin para la creacion de las cuentas LDAP.",
 					"Informacion", JOptionPane.INFORMATION_MESSAGE);
+			int option =JOptionPane.showConfirmDialog(null, "Quieres actualizar el campo ldap de la BBDD?", "",  JOptionPane.YES_NO_OPTION);
+			System.out.println(option);
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {

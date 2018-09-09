@@ -54,6 +54,7 @@ public class JFResultados extends JFrame {
 	public void añadirTexto(String texto) {
 
 		textArea.setText(textArea.getText() + texto + "\n");
+		//textArea.append(texto);
 
 	}
 }

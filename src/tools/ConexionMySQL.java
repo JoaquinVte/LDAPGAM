@@ -95,7 +95,7 @@ public class ConexionMySQL {
 			// String BaseDeDatos = "jdbc:mysql:" + host + ":" + puerto ;
 
 			conexion = DriverManager.getConnection(
-					"jdbc:mysql://" + host + "/mydb?" + "user=" + usuario + "&password=" + password + "&useSSL=false");
+					"jdbc:mysql://" + host + "/mydb?" + "user=" + usuario + "&password=" + password + "&useSSL=false&serverTimezone=UTC");
 			if (conexion == null) {
 				JOptionPane.showMessageDialog(null, "Error al conectar. Revise Configuracion", "Error",
 						JOptionPane.ERROR_MESSAGE);

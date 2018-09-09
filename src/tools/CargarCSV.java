@@ -385,7 +385,7 @@ public class CargarCSV {
 	}
 
 	public String limpiarCaracteres(String s) {
-		String texto = s.replace("ñ", "ny");
+		String texto = (s.replace("ñ", "ny")).replaceAll("Ñ", "NY");
 		texto = Normalizer.normalize(texto, Normalizer.Form.NFD);
 		texto = texto.replaceAll("[\\p{InCombiningDiacriticalMarks}]", "");
 		texto = texto.replaceAll("ñ", "ny");
